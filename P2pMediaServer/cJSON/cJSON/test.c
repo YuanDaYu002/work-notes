@@ -25,29 +25,35 @@
 #include "cJSON.h"
 
 /* Parse text to JSON, then render back to text, and print! */
-void doit(char *text)
+void doit(char *text,char*filename)
 {
 	char *out;cJSON *json;
 	
-	json=cJSON_Parse(text);
+	json=cJSON_Parse(text);//解析成json结构
 	if (!json) {printf("Error before: [%s]\n",cJSON_GetErrorPtr());}
 	else
 	{
-		out=cJSON_Print(json);
+		out=cJSON_Print(json);//json结构体转换成字符串
 		cJSON_Delete(json);
 		printf("%s\n",out);
+		/*
+			再将解析出来的字符串写入到新的文件中
+		*/
+		FILE *writefile = fopen(filename,"wb+");//读写打开文件
+		if(NULL != writefile)
+			fwrite(out,1,strlen(out)+1,writefile);
 		free(out);
 	}
 }
 
 /* Read a file, parse, render back, etc. */
-void dofile(char *filename)
+void dofile(char *filename,char *writeFilename)
 {
 	FILE *f;long len;char *data;
 	
 	f=fopen(filename,"rb");fseek(f,0,SEEK_END);len=ftell(f);fseek(f,0,SEEK_SET);
 	data=(char*)malloc(len+1);fread(data,1,len,f);fclose(f);
-	doit(data);
+	doit(data,writeFilename);
 	free(data);
 }
 
@@ -142,18 +148,18 @@ int main (int argc, const char * argv[]) {
 	char text5[]="[\n	 {\n	 \"precision\": \"zip\",\n	 \"Latitude\":  37.7668,\n	 \"Longitude\": -122.3959,\n	 \"Address\":   \"\",\n	 \"City\":      \"SAN FRANCISCO\",\n	 \"State\":     \"CA\",\n	 \"Zip\":       \"94107\",\n	 \"Country\":   \"US\"\n	 },\n	 {\n	 \"precision\": \"zip\",\n	 \"Latitude\":  37.371991,\n	 \"Longitude\": -122.026020,\n	 \"Address\":   \"\",\n	 \"City\":      \"SUNNYVALE\",\n	 \"State\":     \"CA\",\n	 \"Zip\":       \"94085\",\n	 \"Country\":   \"US\"\n	 }\n	 ]";
 
 	/* Process each json textblock by parsing, then rebuilding: */
-	doit(text1);
-	doit(text2);	
-	doit(text3);
-	doit(text4);
-	doit(text5);
+	doit(text1,"./my_writefile/text1");
+	doit(text2,"./my_writefile/text2");	
+	doit(text3,"./my_writefile/text3");
+	doit(text4,"./my_writefile/text4");
+	doit(text5,"./my_writefile/text5");
 
-	/* Parse standard testfiles: */
-/*	dofile("../../tests/test1"); */
-/*	dofile("../../tests/test2"); */
-/*	dofile("../../tests/test3"); */
-/*	dofile("../../tests/test4"); */
-/*	dofile("../../tests/test5"); */
+	/* Parse standard testfiles:自己改装过，使用时记得多加一个参数 */
+/*	dofile("../../tests/test1","./my_writefile/text1"); */
+/*	dofile("../../tests/test2","./my_writefile/text2"); */
+/*	dofile("../../tests/test3","./my_writefile/text3"); */
+/*	dofile("../../tests/test4","./my_writefile/text4"); */
+/*	dofile("../../tests/test5","./my_writefile/text5"); */
 
 	/* Now some samplecode for building objects concisely: */
 	create_objects();
