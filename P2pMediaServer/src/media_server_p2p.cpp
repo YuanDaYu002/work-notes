@@ -52,6 +52,8 @@ static int g_ST_INFO_OPEN = 1;
 static int g_DEBUG_LOG_FILE_OPEN = 0;
 const char LogFileName[] = "./ListenTester.log";
 
+volatile char P2P_status;			//P2Pmedia server的状态
+
 
 //// liteOS TCP packet Send to Device: 
 ////#define WAKEUP_CODE {0x98,0x3b,0x16,0xf8,0xf3,0x9c}
@@ -496,7 +498,7 @@ void *ThreadRead(void *arg)
 	{
 		UCHAR zz = 0;
 		INT32 ReadSize = 1;
-		INT32 ret = PPCS_Read(gSessionID, Channel, (CHAR*)&zz, &ReadSize, timeout_ms);
+		INT32 ret = PPCS_Read(gSessionID, Channel, (char *)&zz, &ReadSize, timeout_ms);
 		//st_info("PPCS_Read ret=%d, CH=%d, ReadSize=%d Byte, TotalSize=%lu Byte, zz=%d\n", ret, Channel, ReadSize, TotalSize, zz);
 		
 		if ((ret < 0) && (ret != ERROR_PPCS_TIME_OUT))
@@ -759,12 +761,12 @@ int Call_SendCMD(const int skt, const char *CMD, const unsigned short SizeOfCMD,
 成功：返回大于等于0的gSessionID
 失败：返回小于0的错误码
 */
-int Call_P2P_Listen(const char *DID, const char *APILicense)
+int Call_P2P_Listen(const char *Did, const char *APILicense)
 {
 
 	st_Time_Info TimeBegin, TimeEnd;
 	my_GetCurrentTime(&TimeBegin);	
-	gSessionID = PPCS_Listen(DID, 600, 0, 1, APILicense);
+	gSessionID = PPCS_Listen(Did, 600, 0, 1, APILicense);
 	my_GetCurrentTime(&TimeEnd);
 	
 	if (gSessionID < 0)
@@ -802,13 +804,13 @@ int p2p_init(p2p_handle_t *P2P_handle )
 {
 	if(NULL == P2P_handle)
 	{
-		perror("%s %s line %d : illegal argument!!",__FILE__,__func__,__LINE__);
+		printf("%s %s line %d : illegal argument!!",__FILE__,__func__,__LINE__);
 		return -1;
 	}
 	
 	//初始化p2p连接参数句柄
 	memset(P2P_handle,0,sizeof(p2p_handle_t));
-	P2P_handle->DID = DID;
+	P2P_handle->Did = DID;
 	P2P_handle->APILicense = APILICENSE;
 	P2P_handle->CRCKey = CRCKEY;
 	P2P_handle->InitString = INITSTRING;
@@ -821,6 +823,7 @@ int p2p_init(p2p_handle_t *P2P_handle )
 	P2P_handle->Session_num = 0;
 	P2P_status = waked;
 	
+	int useless_ip = 0;	 //无效的ip数
 	// 1. get P2P API Version
 	UINT32 APIVersion = PPCS_GetAPIVersion();
 	st_info("P2P API Version: %d.%d.%d.%d\n",
@@ -835,7 +838,7 @@ int p2p_init(p2p_handle_t *P2P_handle )
 		int server_num = 0;
 		int ip_string  = 0;	
 		int ip_addr_ok = 0;	 //ip参数项是否检验通过
-		int useless_ip = 0;	 //无效的ip数
+		
 
 		/*3个服务器IP都为空则直接退出，至少需要一个IP不为空。*/
 		for(server_num = 0;server_num<SERVER_NUM;server_num++)
@@ -906,7 +909,7 @@ int p2p_init(p2p_handle_t *P2P_handle )
 	st_debug("InitString = %s\n", INITSTRING);
 	
 #ifdef P2P_SUPORT_WAKEUP
-	st_debug("WakeupKey = %s\n", WakeupKey);
+	st_debug("WakeupKey = %s\n", WAKEUPKEY);
 	st_debug("useful NumberOfServer = %d\n\n", SERVER_NUM - useless_ip);
 #endif
 
@@ -930,14 +933,13 @@ int p2p_init(p2p_handle_t *P2P_handle )
 	成功：return 0;
 	失败：return -1;
 */
-volatile char P2P_status;			//P2Pmedia server的状态
 st_Time_Info TimeBegin;				//与唤醒服务器建立连接的时间点
 st_Time_Info TimeEnd;				//接收到唤醒服务器唤醒包的时间点
 int p2p_conect(p2p_handle_t *P2P_handle)
 {
 	if(NULL == P2P_handle)
 	{
-		perror("%s %s line %d : illegal argument!!",__FILE__,__func__,__LINE__);
+		printf("%s\n", );("%s %s line %d : illegal argument!!",__FILE__,__func__,__LINE__);
 		return -1;
 	}
 	
@@ -1051,16 +1053,22 @@ int p2p_conect(p2p_handle_t *P2P_handle)
 int P2P_wait_for_wakeup(p2p_handle_t *P2P_handle)
 {
 	if(NULL == P2P_handle->WakeupKey)//不支持唤醒，直接返回
+	{
 		return 0;
-	else if(P2P_handle->skt < 0)//socket没创建，直接返回
-		perror("ERROR : TCP socket not init!\n");return -1;
+	}
+	else if(P2P_handle->skt < 0) 
+	{
+		printf("ERROR : TCP socket not init!\n");return -1;
+	}
 	else if(P2P_handle->server_index < 0||P2P_handle->server_index > SERVER_NUM)
-		perror("ERROR : server_index error!\n");return -1;
+	{
+		printf("ERROR : server_index error!\n");return -1;
+	}
 	else
 	{
 		struct sockaddr_in zero[SERVER_NUM] = {0};
 		if(0 == memcmp((const void*)&P2P_handle->serveraddr ,(const void *)&zero ,sizeof(sockaddr_in)*(SERVER_NUM)))
-			perror("ERROR : server_index error!");return -1;
+			printf("ERROR : server_index error!");return -1;
 		
 	}
 	

@@ -43,7 +43,7 @@ char g_ServerIP[SERVER_NUM][IP_LENGTH] = {"112.74.108.149","112.74.108.149","112
 
 typedef struct _p2p_handle_t
 {
-	char *DID;			 				//DID: This is Device ID, such as: ABCD-123456-ABCDEF
+	char *Did;			 				//DID: This is Device ID, such as: ABCD-123456-ABCDEF
 	char *APILicense;	 				//APILicense: If you set up CRCKey, this parameter must enter APILicense:CRCKey, if not, you only need to enter APILicense
 	char *CRCKey;		 				//[CRCKey]
 	char *InitString;	 				//tInitString: The encrypted string of the server IP address or the domain name.
