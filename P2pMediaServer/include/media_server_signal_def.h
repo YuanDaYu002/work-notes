@@ -10,7 +10,7 @@
 
 /*
 待定：
-TYPE_DEVICE_INFO	deviceInfo ;	//设备信息，待定
+TYPE_DEVICE_INFO	deviceInfo ;	//设备信息
 SYSTEM_PARAMETER	param ;			//系统参数
 TYPE_WIFI_LOGIN		wifiAP;			// wifi热点信息结构体
 Audio_Coder_Param	audioParam ;	//音频编码参数
@@ -66,52 +66,22 @@ typedef struct
 }STRUCT_GET_MAC_ECHO ; 
 
 //------------------------------------------------------------------------
-#define CMD_DECIVE_TYPE			0x100A		//获取设备型号
+#define CMD_READ_DEV_INFO		0x1019		// 读设备信息	
 typedef struct
 {
 	DEF_CMD_HEADER	;
-}STRUCT_DEVICE_TYPE_REQUEST ;
-
-typedef struct
-{
-	DEF_CMD_HEADER ;
-	TYPE_DEVICE_INFO	deviceInfo ;		//设备信息，待定，
-}STRUCT_DEVIDE_TYPE_ECHO ;
-
-//------------------------------------------------------------------------	
-#define CMD_ALARM_UPDATE		0x100B		//报警通知
-	
-typedef struct
-{
-	DEF_CMD_HEADER ;
-	int	alarmType;							//报警类型0:移动侦测1:IO报警
-	int	alarmChl;							//报警通道号或者报警IO口,从0开始
-	int	reserved[2];						//保留
-}STRUCT_ALARM_UPDATE_ECHO ;
-
-//------------------------------------------------------------------------
-#define CMD_SET_LIVING		0x100C			//设置实时流传输
-
-typedef struct
-{
-	DEF_CMD_HEADER ;
-	int openVideo;							//视频码流开关：0:关闭, 1:打开
-	int videoType;							//视频码流类型：0：1080p(1920*1080)，
-											//1：720p(1280*720)，2：VGA(640*480)	
-	int videoEncType;						//视频编码类型：0：H264, 1:H265
-	int openAudio;							//音频码流开关：0:关闭, 1:打开
-	int audioEncType;						//音频编码类型：0:g711, 1:g726
-	
-}STRUCT_SET_LIVING_REQUEST ;
+}STRUCT_READ_DEVINFO_REQUEST ;
 
 typedef struct
 {
 	DEF_CMD_HEADER	;
-	int		result ;						//0：成功，-1：失败（最好用失败码）。
-}STRUCT_SET_LIVING_ECHO ;
+	TYPE_DEVICE_INFO	devInfo ;			//设备信息
+
+}STRUCT_READ_DEVINFO_ECHO ;
+
 
 //------------------------------------------------------------------------
-#define CMD_SET_DEV_PARA		0x100f		// 设置系统参数	
+#define CMD_SET_DEV_PARA		0x100f		//设置设备系统参数	
 typedef struct
 {
 	DEF_CMD_HEADER	;
@@ -125,10 +95,76 @@ typedef struct
 }STRUCT_SET_DEV_PARAM_ECHO ;
 
 //------------------------------------------------------------------------
-#define CMD_SET_REBOOT			0x1010		// 重启命令
+#define CMD_READ_DEV_PARA		0x1018		// 读取设备系统参数	
 typedef struct
 {
 	DEF_CMD_HEADER	;
+}STRUCT_READ_DEV_PARAM_REQUEST ;
+
+typedef struct
+{
+	DEF_CMD_HEADER	;
+	SYSTEM_PARAMETER	param ;				//系统参数
+}STRUCT_READ_DEV_PARAM_ECHO ;
+
+
+//------------------------------------------------------------------------	
+#define CMD_ALARM_UPDATE		0x100B		//报警通知
+	
+typedef struct
+{
+	DEF_CMD_HEADER ;
+	int	alarmType;							//报警类型0:移动侦测1:IO报警
+	int	alarmChl;							//报警通道号或者报警IO口,从0开始
+	int	reserved[2];						//保留
+}STRUCT_ALARM_UPDATE_ECHO ;
+
+//------------------------------------------------------------------------
+#define CMD_OPEN_LIVING			0x100C		//打开实时流传输
+
+typedef struct
+{
+	DEF_CMD_HEADER ;
+	int videoType;							//视频码流类型：0：1080p(1920*1080)，
+											//1：720p(1280*720)，2：VGA(640*480)	
+	int openAudio;							//音频码流开关：0:关闭, 1:打开
+	
+}STRUCT_OPEN_LIVING_REQUEST;
+
+typedef struct
+{
+	DEF_CMD_HEADER	;
+	int		result ;						//成功：0
+											//失败：
+											//-1：请求视频流失败
+											//-2: 请求音频流失败
+}STRUCT_OPEN_LIVING_ECHO ;
+
+
+//------------------------------------------------------------------------
+#define CMD_CLOSE_LIVING		0x100D		//关闭实时流传输
+typedef struct
+{
+	DEF_CMD_HEADER ;
+
+}STRUCT_CLOSE_LIVING_REQUEST;
+
+typedef struct
+{
+	DEF_CMD_HEADER	;
+	int		result ;						//成功：0
+											//失败：-1
+		
+}STRUCT_CLOSE_LIVING_ECHO ;
+
+
+//------------------------------------------------------------------------
+#define CMD_SET_REBOOT			0x1010		// 重启命令
+typedef struct
+{
+	DEF_CMD_HEADER;
+	unsigned int	headFlag1	;			//0x55555555
+	unsigned int	headFlag2	;			//0xaaaaaaaa
 }STRUCT_SET_REBOOT_REQUEST ;
 
 typedef struct
@@ -141,21 +177,36 @@ typedef struct
 #define CMD_SET_UPDATE			0x1012		//升级命令
 typedef struct
 {
-	DEF_CMD_HEADER	;
-	unsigned int		checkFlag ;			//must be 0x5555aaaa
-	unsigned int		fileLength ;		//升级文件长度
-	char				filename[96] ;		//升级文件名
-	char				file[0] ;			//文件内容，长度由fileLength描述
+	DEF_CMD_HEADER;
+	char packageVersion[16];				//线上升级包的最新版本号
+	char URL[256];							//升级文件在网络中的位置信息（URL）
+	
+
 }STRUCT_SET_UPDATE_REQUEST ;
 
 typedef struct
 {
 	DEF_CMD_HEADER	;
-	int		   echo ;						//0:succeed,1:malloc failed,
-											//2:get shared memory failed，
-											//3:file length incorrect,
-											//4:file checksum incorrect,
-											//5:file version same
+	int		   echo ;						/*   0:succeed,
+												-1:check version failed
+												-2:package version same
+												-3:download package failed
+												-4:checksum incorrect
+												-5:erase flash failed
+												-6:write flash failed
+												-7:malloc failed
+												-8:file length incorrect
+												-9:malloc failed
+												-10:unknow error
+											*/
+	unsigned short	percent;				//进度百分比：0-100
+	unsigned short	status ;				/*升级状态：
+												0：版本校验状态
+												1：文件下载状态
+												2: 文件校验状态
+												3：擦除flash状态
+												4：写flash状态
+											*/
 }STRUCT_SET_UPDATE_ECHO ;
 
 //------------------------------------------------------------------------
@@ -163,6 +214,9 @@ typedef struct
 typedef struct
 {
 	DEF_CMD_HEADER;
+	unsigned int	headFlag1	;			//0x55555555
+	unsigned int	headFlag2	;			//0xaaaaaaaa
+	
 }STRUCT_SET_RESTORE_REQUEST;
 
 typedef struct
@@ -199,35 +253,8 @@ typedef struct
 	DEF_CMD_HEADER	;
 	TYPE_WIFI_LOGIN		wifiAP ;			//返回对应wifi热点的连接状态信息
 }STRUCT_GET_WIFISTATUS_ECHO ;
-
 //------------------------------------------------------------------------
-#define CMD_READ_DEV_PARA		0x1018		// 读取设备系统参数	
-typedef struct
-{
-	DEF_CMD_HEADER	;
-}STRUCT_READ_DEV_PARAM_REQUEST ;
 
-typedef struct
-{
-	DEF_CMD_HEADER	;
-	SYSTEM_PARAMETER	param ;				//系统参数
-}STRUCT_READ_DEV_PARAM_ECHO ;
-
-//------------------------------------------------------------------------
-#define CMD_READ_DEV_INFO		0x1019		// 读设备信息	
-typedef struct
-{
-	DEF_CMD_HEADER	;
-}STRUCT_READ_DEVINFO_REQUEST ;
-
-typedef struct
-{
-	DEF_CMD_HEADER	;
-	TYPE_DEVICE_INFO	devInfo ;			//设备信息
-
-}STRUCT_READ_DEVINFO_ECHO ;
-
-//------------------------------------------------------------------------
 #define CMD_REQUEST_LOGIN		0x101A		// 登陆请求命令
 typedef struct
 {
@@ -240,55 +267,13 @@ typedef struct
 {
 	DEF_CMD_HEADER	;
 	int	permit  ;							//权限：0：超级用户，1：普通用户
-	int echo ;								//成功：0 ,失败：错误码
+	int echo ;								//成功：0 ,
+											//失败：-1:密码错误，-2：用户名错误
 
 }STRUCT_REQ_LOGIN_ECHO ;
 
 //------------------------------------------------------------------------
-#define CMD_GET_DEVICEID		0x1023		//读取设备ID 
-typedef struct
-{
-	DEF_CMD_HEADER;
-}STRUCT_GET_DEVICEID_REQUEST ;
-
-typedef struct
-{
-	DEF_CMD_HEADER;
-	char			mac[6] ;
-	char			reserve[2] ;
-	char			deviceID[16] ;
-}STRUCT_GET_DEVICEID_ECHO ;
-
-
-//------------------------------------------------------------------------
-#define CMD_GET_AUDIO_SETTING	0x1025 		//设备音频编码参数获取
-
-typedef struct
-{
-	unsigned char	sampleRate; 			//采样率 0:8K ,1:12K,  2: 11.025K, 
-											//3:16K ,4:22.050K ,5:24K ,6:32K ,7:48K;	
-	unsigned char 	audioType;				//编码类型 0:g711 ,1:g726
-	unsigned char 	enBitwidth;				//位宽 0:8, 1:16, 2:32
-	unsigned char	recordVolume;			//设备当前输入音量（区间）
-	unsigned char 	speakVolume;			//设备当前输出音量（区间）
-	unsigned char	reserved[3];			//保留		
-	unsigned int	framelen ;				//音频帧大小(80/160/240/320/480/1024/2048)
-}Audio_Coder_Param ;
-
-typedef struct
-{
-	DEF_CMD_HEADER ;
-}STRUCT_GET_AUDIO_SETTING_REQUEST ;
-
-typedef struct
-{
-	DEF_CMD_HEADER ;
-	Audio_Coder_Param		audioParam ;	//音频编码参数
-}STRUCT_GET_AUDIO_SETTING_ECHO ;
-
-//------------------------------------------------------------------------
-#define CMD_SET_AUDIO_SETTING	0x1026		//设置AUdio音量参数（对应 Audio_Coder_Param，
-											//但只开放输入输出音量参数）
+#define CMD_SET_AUDIO_VOL	0x1026		//设置AUdio音量参数
 typedef struct
 {
 	DEF_CMD_HEADER ;
@@ -296,13 +281,13 @@ typedef struct
 	unsigned short		spkVol ;			//设备喇叭音量,0-100;
 											/*（设备端音频API接口的音量设置区间可能不是0-100，
 											客户端按0-100设置，设备端需要重新映射）*/
-}STRUCT_SET_AUDIO_SETTING_REQUEST ;
+}STRUCT_SET_AUDIO_VOL_REQUEST ;
 
 typedef struct
 {
 	DEF_CMD_HEADER ;
 	int					echo ;				//-1：失败，0：成功
-}STRUCT_SET_AUDIO_SETTING_ECHO ;
+}STRUCT_SET_AUDIO_VOL_ECHO ;
 
 #pragma pack()
 

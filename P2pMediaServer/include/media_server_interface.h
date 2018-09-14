@@ -14,30 +14,41 @@
 
 key_t msg_queue_key;				//消息队列键值（设备端app和media server 之间进行通信,media_server_init会初始化）。
 
+enum P2P_media_server_status
+{
+	sleeping = 0,		//睡眠状态（无客户端连接）
+	waked = 1,			//唤醒状态（无客户端连接）
+	connected,			//客户端已连接状态
+	livingstream,		//实时流传输状态
+	upgrade,			//升级状态
+	
+};
+
+
 enum med_ser_error_code
 {
-	media_server_error  = -1;
-	media_server_success;
-	media_server_online;
-	media_server_offline;
-	media_server_upgrading;
-}
+	media_ser_offline = -3,
+	media_ser_param_err = -2,		//参数错误
+	media_ser_error  = -1,
+	media_ser_success = 0,
+
+};
 
 enum med_ser_alarm_file_type
 {
-	JPEG_file = 0;
-	H264_video_file = 1;
-	H265_video_file = 2;
-	g711_audio_file = 3;
-	H264_mix_g711_file = 4;
-	H265_mix_g711_file = 5;
-}
+	JPEG_file = 0,
+	H264_video_file = 1,
+	H265_video_file = 2,
+	g711_audio_file = 3,
+	H264_mix_g711_file = 4,
+	H265_mix_g711_file = 5,
+};
 
 enum med_ser_device_type
 {
-	HI3516C_V300_IPC = 0;
-	HI3516E_V100_IPC = 1;
-}
+	HI3516C_V300_IPC = 0,
+	HI3516E_V100_IPC = 1,
+};
 
 typedef struct _med_ser_alarm_file_t
 {

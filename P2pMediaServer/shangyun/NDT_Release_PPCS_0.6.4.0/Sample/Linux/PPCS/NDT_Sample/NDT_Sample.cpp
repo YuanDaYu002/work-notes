@@ -1,15 +1,12 @@
 // NDT_Sample.cpp : 定義主控台應用程式的進入點。
 //
-#if defined WINDOWS 
-#include <windows.h>
-#include <stdio.h>
-#elif defined LINUX
+
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-#endif
+
 
 #include "NDT_Type.h"
 #include "NDT_API.h"
@@ -17,11 +14,9 @@
 
 void mSecSleep(UINT32 ms)
 {
-#if defined WINDOWS
-	Sleep(ms);
-#elif defined LINUX
+
 	usleep(ms * 1000);
-#endif
+
 }
 
 typedef struct {
@@ -138,11 +133,8 @@ const char *getNDTErrorCodeInfo(int err)
 //// RecvFrom thread of BC
 //// 0: Not Running, 1: Running, 2: About thread exit ...
 CHAR gFlagStatus_thread_BC_RecvFrom = 0; 
-#if defined WINDOWS
-DWORD WINAPI thread_BC_RecvFrom(void* arg)
-#elif defined LINUX
+
 void *thread_BC_RecvFrom(void *arg)
-#endif
 {
 	INT32 RetryCounter;
 	INT32 RecvFromCounter;
@@ -194,19 +186,14 @@ void *thread_BC_RecvFrom(void *arg)
 	gFlagStatus_thread_BC_RecvFrom = 2;
 	NDT_PPCS_CloseHandle(DeviceHandle);
 	printf("thread_BC_RecvFrom exit... DeviceHandle=%d\n", DeviceHandle);
-#if defined WINDOWS
-	return 0;
-#elif defined LINUX
+
 	pthread_exit(0);
-#endif
+
 }
 
 //// SendBack thread of BS
-#if defined WINDOWS
-DWORD WINAPI thread_BS_SendBack(void* arg)
-#elif defined LINUX
+
 void *thread_BS_SendBack(void *arg)
-#endif
 {
 	INT32 RetryCounter;
 	INT32 SendBackCounter;
@@ -244,19 +231,14 @@ void *thread_BS_SendBack(void *arg)
 		}
 	}
 	NDT_PPCS_CloseHandle(ClientHandle);
-#if defined WINDOWS
-	return 0;
-#elif defined LINUX
+
 	pthread_exit(0);
-#endif
+
 }
 
 //// SendBack thread of ES
-#if defined WINDOWS
-DWORD WINAPI thread_ES_SendBack(void* arg)
-#elif defined LINUX
+
 void *thread_ES_SendBack(void *arg)
-#endif
 {
 	INT32 RetryCounter = 0;
 	INT32 ret;
@@ -290,11 +272,9 @@ void *thread_ES_SendBack(void *arg)
 	}
 	NDT_PPCS_CloseHandle(pSB_Info->ClientHandle);
 	free(pSB_Info);
-#if defined WINDOWS
-	return 0;
-#elif defined LINUX
+
 	pthread_exit(0);
-#endif
+
 }
 
 INT32 main(INT32 argc, CHAR* argv[])
@@ -535,11 +515,9 @@ INT32 main(INT32 argc, CHAR* argv[])
 		}
 		else if (strcmp( argv[2], "es") == 0) // Client: "ec" <---> Device: "es"
 		{
-#if defined WINDOWS
-			HANDLE hthread_ES_SendBack;
-#elif defined LINUX
+
 			pthread_t hthread_ES_SendBack;
-#endif
+
 			CHAR Buf[1280] = {0};
 			UINT16 Size = sizeof(Buf);
 			st_SendBack_Info *pSB_Info = (st_SendBack_Info *)malloc(sizeof(st_SendBack_Info));
@@ -569,13 +547,10 @@ INT32 main(INT32 argc, CHAR* argv[])
 			memcpy(pSB_Info->ResponseBuf, Buf, Size);
 			pSB_Info->ResponseSize = Size;
 			//// Create SendBack thread
-#ifdef WINDOWS
-			hthread_ES_SendBack = CreateThread(NULL, 0, thread_ES_SendBack, (void *) pSB_Info, 0, NULL);
-			if (hthread_ES_SendBack) CloseHandle(hthread_ES_SendBack);
-#elif defined LINUX
+
 			pthread_create(&hthread_ES_SendBack, NULL, &thread_ES_SendBack, (void *) pSB_Info);
 			if (hthread_ES_SendBack) pthread_detach(hthread_ES_SendBack);
-#endif
+
 		}
 		else if (strcmp(argv[2], "ec") == 0)
 		{
@@ -672,11 +647,9 @@ INT32 main(INT32 argc, CHAR* argv[])
 		}
 		else if (strcmp(argv[2], "bs") == 0) // Client: "bc" <---> Device: "bs"
 		{
-#if defined WINDOWS
-			HANDLE hthread_BS_SendBack;
-#elif defined LINUX
+
 			pthread_t hthread_BS_SendBack;
-#endif
+
 			CHAR Buf[1280] = {0};
 			UINT16 Size = sizeof(Buf);
 			ret = NDT_PPCS_Recv(Buf, &Size, 0, Option);
@@ -694,13 +667,10 @@ INT32 main(INT32 argc, CHAR* argv[])
 			{
 				BSRecvCounter[ClientHandle] = 0;
 				//// Create SendBack thread
-#ifdef WINDOWS
-				hthread_BS_SendBack = CreateThread(NULL, 0, thread_BS_SendBack, (void *)((intptr_t)ClientHandle) , 0, NULL);
-				if (hthread_BS_SendBack) CloseHandle(hthread_BS_SendBack);
-#elif defined LINUX
+
 				pthread_create(&hthread_BS_SendBack, NULL, &thread_BS_SendBack, (void *)((intptr_t)ClientHandle));
 				if (hthread_BS_SendBack) pthread_detach(hthread_BS_SendBack);
-#endif
+
 			}
 			else
 			{	
@@ -727,11 +697,9 @@ INT32 main(INT32 argc, CHAR* argv[])
 		}
 		else if (strcmp(argv[2], "bc") == 0)
 		{
-#if defined WINDOWS
-			HANDLE hthread_BC_RecvFrom;
-#elif defined LINUX
+
 			pthread_t hthread_BC_RecvFrom;
-#endif
+
 			CHAR Buf_SendTo[1280] = {0};
 			INT32 RetryCounter = 0;
 			sprintf(Buf_SendTo, "%06d", SuccessCounter);
@@ -768,13 +736,10 @@ INT32 main(INT32 argc, CHAR* argv[])
 			
 			if (gFlagStatus_thread_BC_RecvFrom == 0)
 			{
-#ifdef WINDOWS
-				hthread_BC_RecvFrom = CreateThread(NULL, 0, thread_BC_RecvFrom, (void *)((intptr_t)DeviceHandle), 0, NULL);
-				if (hthread_BC_RecvFrom) CloseHandle(hthread_BC_RecvFrom);
-#elif defined LINUX
+
 				pthread_create(&hthread_BC_RecvFrom, NULL, &thread_BC_RecvFrom, (void *)((intptr_t)DeviceHandle));
 				if (hthread_BC_RecvFrom) pthread_detach(hthread_BC_RecvFrom);
-#endif
+
 				while (gFlagStatus_thread_BC_RecvFrom == 0)
 					mSecSleep(10);
 			}

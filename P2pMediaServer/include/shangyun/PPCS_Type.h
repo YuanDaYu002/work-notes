@@ -1,10 +1,10 @@
 #if !defined(__INCLUDED_TYPE_DEFINE____H)
 #define __INCLUDED_TYPE_DEFINE____H
 
-#if defined WIN32DLL || defined LINUX
+
 typedef int INT32;
 typedef unsigned int UINT32;
-#endif
+
 
 typedef short INT16;
 typedef unsigned short UINT16;

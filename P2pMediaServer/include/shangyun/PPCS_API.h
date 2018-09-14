@@ -1,19 +1,12 @@
 #ifndef _PPCS_API___INC_H_
 #define _PPCS_API___INC_H_
 
-#ifdef WIN32DLL
-#ifdef PPPP_API_EXPORTS
-#define PPPP_API_API __declspec(dllexport)
-#else
-#define PPPP_API_API __declspec(dllimport)
-#endif
-#endif //// #ifdef WIN32DLL
 
 
-#ifdef LINUX
+
 #include <netinet/in.h>
 #define PPPP_API_API 
-#endif //// #ifdef LINUX
+
 
 #ifdef _ARC_COMPILER
 #include "net_api.h"
