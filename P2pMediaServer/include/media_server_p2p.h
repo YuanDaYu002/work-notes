@@ -6,7 +6,7 @@
   *History:  
 **********************************************************************************/
 #ifndef MEDIA_SERVER_P2P_H
-#definr MEDIA_SERVER_P2P_H
+#define MEDIA_SERVER_P2P_H
 
 #define CH_CMD				0
 #define CH_DATA				1
@@ -37,7 +37,7 @@
 #define IP_LENGTH			16
 #define TCP_PORT			12306
 #define UDP_PORT			12305
-char g_ServerIP[SERVER_NUM][IP_LENGTH] = {{"112.74.108.149"}{"112.74.108.149"}{"112.74.108.149"}};
+char g_ServerIP[SERVER_NUM][IP_LENGTH] = {"112.74.108.149","112.74.108.149","112.74.108.149"};
 #endif
 
 
@@ -83,6 +83,8 @@ int p2p_send(void *handle,const void*data,int length);
 
 //close
 int p2p_close(void *handle); 
+
+
 
 
 #endif

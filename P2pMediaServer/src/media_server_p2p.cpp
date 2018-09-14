@@ -1017,8 +1017,8 @@ int p2p_conect(p2p_handle_t *P2P_handle)
 
 			if(0 > P2P_handle->skt)
 			{
-				error("ERROR, all server IP is connect failed !");
-				return -1；
+				error("ERROR, all server IP is connect failed !\n");
+				return -1;
 			}
 
 		}
